@@ -1,7 +1,9 @@
-import { Search, User, Menu } from 'lucide-react';
+import { Search, User, Menu, LogOut } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 const Header = ({ onSearch, toggleSidebar }) => {
+  const { user, logout } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const profileRef = useRef();
@@ -22,8 +24,8 @@ const Header = ({ onSearch, toggleSidebar }) => {
     onSearch(searchQuery);
   };
 
-  const handleSignOut = () => {
-    window.location.href = '/login';
+  const handleLogout = () => {
+    logout();
   };
 
   return (
@@ -62,10 +64,11 @@ const Header = ({ onSearch, toggleSidebar }) => {
           {isProfileOpen && (
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50">
               <button
-                onClick={handleSignOut}
+                onClick={handleLogout}
                 className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
-                Sign Out
+                <LogOut className="h-4 w-4" />
+                <span>Logout</span>
               </button>
             </div>
           )}

@@ -1,18 +1,22 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from datetime import datetime
+from datetime import datetime, timedelta
+import jwt
+from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 
 app = Flask(__name__)
 CORS(app)
+app.config['SECRET_KEY'] = 'your-secret-key'  # Change this to a secure secret key in production
 
 # In-memory storage (replace with a proper database in production)
 users = {
     'educator@example.com': {
-        'password': 'educator123',
+        'password': generate_password_hash('educator123'),
         'role': 'educator'
     },
     'student@example.com': {
-        'password': 'student123',
+        'password': generate_password_hash('student123'),
         'role': 'student'
     }
 }
@@ -51,7 +55,45 @@ students = [
     }
 ]
 
+# JWT token decorator
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = request.headers.get('Authorization')
+        if not token:
+            return jsonify({'message': 'Token is missing'}), 401
+        try:
+            token = token.split(' ')[1]  # Remove 'Bearer ' prefix
+            data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+            current_user = users.get(data['email'])
+            if not current_user:
+                return jsonify({'message': 'User not found'}), 401
+        except:
+            return jsonify({'message': 'Token is invalid'}), 401
+        return f(current_user, *args, **kwargs)
+    return decorated
+
 # Authentication routes
+@app.route('/api/register', methods=['POST'])
+def register():
+    data = request.json
+    email = data.get('email')
+    password = data.get('password')
+    role = data.get('role', 'student')  # Default role is student
+    
+    if not email or not password:
+        return jsonify({'message': 'Email and password are required'}), 400
+    
+    if email in users:
+        return jsonify({'message': 'User already exists'}), 400
+    
+    users[email] = {
+        'password': generate_password_hash(password),
+        'role': role
+    }
+    
+    return jsonify({'message': 'User registered successfully'}), 201
+
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json
@@ -59,25 +101,39 @@ def login():
     password = data.get('password')
     
     user = users.get(email)
-    if user and user['password'] == password:
-        return jsonify({
-            'success': True,
-            'role': user['role'],
-            'email': email
-        })
+    if not user or not check_password_hash(user['password'], password):
+        return jsonify({'message': 'Invalid credentials'}), 401
+    
+    token = jwt.encode({
+        'email': email,
+        'role': user['role'],
+        'exp': datetime.utcnow() + timedelta(hours=24)
+    }, app.config['SECRET_KEY'])
     
     return jsonify({
-        'success': False,
-        'message': 'Invalid credentials'
-    }), 401
+        'token': token,
+        'role': user['role'],
+        'email': email
+    })
 
-# Exam routes
+@app.route('/api/logout', methods=['POST'])
+@token_required
+def logout(current_user):
+    # In a real application, you might want to blacklist the token
+    return jsonify({'message': 'Logged out successfully'})
+
+# Protected exam routes
 @app.route('/api/exams', methods=['GET'])
-def get_exams():
+@token_required
+def get_exams(current_user):
     return jsonify(exams)
 
 @app.route('/api/exams', methods=['POST'])
-def create_exam():
+@token_required
+def create_exam(current_user):
+    if current_user['role'] != 'educator':
+        return jsonify({'message': 'Only educators can create exams'}), 403
+    
     if not request.is_json:
         return jsonify({'error': 'Invalid request'}), 400
     
