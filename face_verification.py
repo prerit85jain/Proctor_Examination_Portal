@@ -4,20 +4,20 @@ import requests
 import os
 from datetime import datetime
 
-# Face++ API Configuration
+
 API_KEY = "pRWJ7BuSAPCmouo3B5XxSLcVsVH5h_kL"
 API_SECRET = "1WHstlsEcu-tQ5_eXA0NbLn61gKyZXBL"
 
-# Configuration
-CHECK_INTERVAL = 30  # Seconds between checks
-CONFIDENCE_THRESHOLD = 75  # Minimum confidence percentage
+
+CHECK_INTERVAL = 30  
+CONFIDENCE_THRESHOLD = 75 
 
 def load_registered_token():
     """Load the registered face token from file"""
     try:
         with open("student_data/registered_students.txt", "r") as f:
             last_line = f.readlines()[-1].strip()
-            return last_line.split(',')[1]  # Returns the face token
+            return last_line.split(',')[1]
     except Exception as e:
         print(f"❌ Error loading registered token: {str(e)}")
         return None
@@ -25,7 +25,7 @@ def load_registered_token():
 def auto_capture_photo():
     """Capture photo from webcam with improved reliability"""
     try:
-        cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)  # Better for Windows
+        cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
         if not cap.isOpened():
             raise Exception("Webcam not accessible")
         
@@ -121,6 +121,5 @@ def run_proctoring():
         print(f"\n❌ Unexpected error: {str(e)}")
 
 if __name__ == "__main__":
-    # Create directory for photos if not exists
     os.makedirs("student_data", exist_ok=True)
     run_proctoring()

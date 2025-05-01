@@ -4,17 +4,15 @@ import requests
 import os
 from datetime import datetime
 
-# Face++ API Configuration
 API_KEY = "pRWJ7BuSAPCmouo3B5XxSLcVsVH5h_kL"
 API_SECRET = "1WHstlsEcu-tQ5_eXA0NbLn61gKyZXBL"
 
-# Create directory for saving student photos
 os.makedirs("student_data", exist_ok=True)
 
 def auto_capture_photo(student_id):
     """Capture photo from webcam with improved error handling"""
     try:
-        cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)  # Better for Windows
+        cap = cv2.VideoCapture(0, cv2.CAP_DSHOW) 
         if not cap.isOpened():
             raise Exception("Webcam not found or accessible")
         
@@ -27,7 +25,7 @@ def auto_capture_photo(student_id):
         if not ret:
             raise Exception("Failed to capture image")
         
-        # Save with timestamp and student ID
+     
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"student_data/{student_id}_{timestamp}.jpg"
         cv2.imwrite(filename, frame)
@@ -72,7 +70,7 @@ def get_face_token(photo_path):
             print(f"⚠️ API Error: {str(e)}")
             if attempt == max_retries - 1:
                 return None
-            time.sleep(2)  # Wait before retrying
+            time.sleep(2)
 
 def save_student_data(student_id, face_token):
     """Save student data to a file"""
